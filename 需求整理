@@ -1,0 +1,12 @@
+2022年10月29日
+
+1：需要将阿里云盘WebDav程序整合进入主程序，APK地址为：https://github.com/eritpchy/webdav-aliyundriver-android/releases/download/1.7.0/net.xdow.webdavaliyundriver.1.7.0.release.apk
+项目开源网址为：https://github.com/eritpchy/webdav-aliyundriver-android
+
+2：加入屏幕锁定功能
+
+3：计划加入摄像头开启功能，可以实现在VR中观测外部环境
+
+4：计划加入屏幕最小化和最大化功能
+
+5：计划调整屏幕尺寸，目前分辨率为1920X1080
