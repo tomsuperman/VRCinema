@@ -1,0 +1,72 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using CurvedUI;
+using UnityEngine.InputSystem.XR;
+
+public class TheeDHandeler : MonoBehaviour
+{
+
+    [SerializeField]
+    private GameObject mediaControl;
+
+    [SerializeField]
+    private GameObject screen;
+
+    [SerializeField]
+    private Camera mainCamera;
+
+    [SerializeField]
+    private Slider lightControl;
+
+    [SerializeField]
+    private TrackedPoseDriver trackPoseDriver;
+
+    [SerializeField]
+    private RawImage screenImage;
+
+    [SerializeField]
+    private GameObject camOffset;
+
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if (Input.GetKey(KeyCode.Space))
+        {
+            RenderSettings.skybox.SetFloat("_Rotation", RenderSettings.skybox.GetFloat("_Rotation")+20f*Time.deltaTime); //10
+        }
+        //Debug.Log(screenImage.color.a+":::"+lightControl.value);
+        /* if(Input.GetKeyDown(KeyCode.Space))
+         {
+             camOffset.transform.position = new Vector3(camOffset.transform.position.x, camOffset.transform.position.y, 4.23f);
+             screen.GetComponent<followCameraCanvas>().enabled = true;
+             screen.GetComponent<CurvedUISettings>().enabled = false;
+             lightControl.value = 0.33f;
+             mediaControl.SetActive(false);
+             screenImage.color = new Color(255, 255, 255, 0.78f);
+             trackPoseDriver.enabled = false;
+             mainCamera.GetComponent<StartSceneRotation>().enabled = true;
+         }*/
+    }
+
+    public void change3dSetting()
+    {       
+        camOffset.transform.position = new Vector3(camOffset.transform.position.x, camOffset.transform.position.y, 3.5f); //4.23
+        screen.GetComponent<followCameraCanvas>().enabled = true;
+        screen.GetComponent<CurvedUISettings>().enabled = false;
+        lightControl.value = 0.3f; //0.33
+        mediaControl.SetActive(false);
+        screenImage.color = new Color(255, 255, 255, 0.8f); //0.78
+        //trackPoseDriver.enabled = false;
+        //trackPoseDriver.trackingType = TrackedPoseDriver.TrackingType.PositionOnly;
+        //mainCamera.GetComponent<StartSceneRotation>().enabled = true;
+    }
+}
