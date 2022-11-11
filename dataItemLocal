@@ -1,0 +1,191 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using System.Linq;
+using Battlehub.UIControls;
+using UnityEngine.UI;
+using TMPro;
+using UnityEngine.Video;
+public class dataItemLocal : MonoBehaviour
+{
+    public VirtualizingTreeView TreeView;
+
+    private List<DataItem> m_dataItems = new List<DataItem>();
+
+    [SerializeField]
+    private TextMeshProUGUI textField;
+    [SerializeField]
+    private VideoPlayer videoPlayer;
+
+    private bool intialCheck;
+
+    private string parentName = "";
+    private string childName = "";
+
+    private void Awake()
+    {
+        intialCheck = true;
+    }
+
+    private void OnItemBeginDrop(object sender, ItemDropCancelArgs e)
+    {
+
+    }
+
+    private void getLocalDataItems()
+    {
+        m_dataItems = ReadLocalFile.m_dataItems;
+        TreeView.Items = m_dataItems;
+       
+    }
+
+
+
+    private void Start()
+    {
+        TreeView.ItemDataBinding += OnItemDataBinding;
+        TreeView.SelectionChanged += OnSelectionChanged;
+        TreeView.ItemExpanding += OnItemExpanding;
+
+        /*m_dataItems = new List<DataItem>();
+        for (int i = 0; i < 100; ++i)
+        {
+            DataItem dataItem = new DataItem("DataItem " + i);
+            m_dataItems.Add(dataItem);
+        }
+
+        TreeView.Items = m_dataItems;*/
+
+
+    }
+    private void Update()
+    {
+        if (ReadLocalFile.checkstatus && intialCheck)
+        {
+           
+            getLocalDataItems();
+            intialCheck = false;
+        }
+
+        //Debug.Log(Time.fixedTime + ":::" + ReadLocalFile.checkstatus+":::"+intialCheck);
+    }
+
+    private void OnDestroy()
+    {
+        TreeView.ItemDataBinding -= OnItemDataBinding;
+        TreeView.SelectionChanged -= OnSelectionChanged;
+        TreeView.ItemExpanding -= OnItemExpanding;
+
+    }
+
+    private void OnItemExpanding(object sender, VirtualizingItemExpandingArgs e)
+    {
+        //get parent data item (game object in our case)
+        DataItem dataItem = (DataItem)e.Item;
+        
+        parentName = dataItem.Name;
+
+        //Debug.Log(parentName);
+        if (dataItem.Children.Count > 0)
+        {
+            //Populate children collection
+            e.Children = dataItem.Children;
+            
+        }
+    }
+
+    private void OnSelectionChanged(object sender, SelectionChangedArgs e)
+    {
+        /*#if UNITY_EDITOR
+        //Do something on selection changed (just syncronized with editor's hierarchy for demo purposes)
+        UnityEditor.Selection.objects = e.NewItems.OfType<GameObject>().ToArray();
+        #endif*/
+
+        DataItem dataItem = (DataItem)e.NewItem;
+
+        //Debug.Log(dataItem.Name);
+
+        //if (dataItem.Children.Count > 0)
+        //   Debug.Log("This is folder");
+
+        try
+        {
+            childName = dataItem.Name;
+
+            //Debug.Log(dataItem.Children.Count);
+            if (dataItem.Children.Count == 0 || dataItem.Children == null)
+            {
+                
+                foreach (string item in ReadLocalFile.allFiles)
+                {
+             
+                    //Debug.Log(parentName + childName);
+
+                    if (item.Contains(parentName+childName))
+                        /*item.Contains(dataItem.Name)*/
+                    {
+                        //Debug.Log(item);
+                        textField.text = item;
+                        videoPlayer.url = item;
+                        if (VideoControl.needAdjustment)
+                            GameObject.Find("Right Screen").GetComponent<VideoPlayer>().url = item;
+                        if (!VideoControl.needAdjustment)
+                            GameObject.Find("Right Screen").GetComponent<VideoPlayer>().url = null;
+                        return;
+
+                    }
+                    else if(!item.Contains(parentName + childName))
+                    {
+                        if(item.Contains(childName))
+                        {
+                            textField.text = item;
+                            videoPlayer.url = item;
+
+                            if (VideoControl.needAdjustment)
+                                GameObject.Find("Right Screen").GetComponent<VideoPlayer>().url = item;
+                            if (!VideoControl.needAdjustment)
+                                GameObject.Find("Right Screen").GetComponent<VideoPlayer>().url = null;
+                            return;
+                        }
+                    }
+                }
+
+            }
+        }
+        catch { return; }
+            
+    }
+
+
+
+    /// <summary>
+    /// This method called for each data item during databinding operation
+    /// You have to bind data item properties to ui elements in order to display them.
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    private void OnItemDataBinding(object sender, VirtualizingTreeViewItemDataBindingArgs e)
+    {
+        DataItem dataItem = e.Item as DataItem;
+        if (dataItem != null)
+        {
+            //We display dataItem.name using UI.Text 
+            Text text = e.ItemPresenter.GetComponentInChildren<Text>(true);
+            text.text = dataItem.Name;
+            text.fontSize = 20;
+
+            //Load icon from resources
+            Image icon = e.ItemPresenter.GetComponentsInChildren<Image>()[4];
+            icon.sprite = Resources.Load<Sprite>("board");
+
+            //And specify whether data item has children (to display expander arrow if needed)
+
+            e.HasChildren = dataItem.Children.Count > 0;
+
+        }
+    }
+
+
+
+}
+
