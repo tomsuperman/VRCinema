@@ -1,0 +1,410 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Video;
+using TMPro;
+using UnityEngine.Audio;
+using System;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+
+
+
+public class VideoControl : MonoBehaviour
+{
+    [SerializeField]
+    private VideoPlayer videoPlayer;
+
+    //private VideoSource videoSource;
+
+    [SerializeField]
+    private AudioSource audioSource;
+
+    [SerializeField]
+    private TextMeshProUGUI videoURL;
+
+    [SerializeField]
+    private VideoPlayer videoAdjustment;
+
+    [SerializeField]
+    private Slider lightControl;
+
+    [SerializeField]
+    private RawImage _screen;
+
+
+    [SerializeField]
+    private TextMeshProUGUI runTimer;
+    [SerializeField]
+    private TextMeshProUGUI finalTimer;
+
+    [SerializeField]
+    private GameObject fileContent;
+    private bool showFileStatus;
+
+    [SerializeField]
+    private TextMeshProUGUI debugText;
+
+    [SerializeField]
+    private Canvas coverScreen;
+    [SerializeField]
+    private Canvas coverScreen2;
+
+
+    //private bool needAdjustment;
+    public static bool needAdjustment;
+
+    private bool dimLight;
+    private bool brightLight;
+
+    private void Awake()
+    {
+        if (SceneManager.GetActiveScene().name == "MovieScene-Local3Dtest" || SceneManager.GetActiveScene().name == "MovieScene-Local3Dtestturn")
+            needAdjustment = true;
+        else
+            needAdjustment = (SystemInfo.deviceName == "Xperia 1 IV");
+            //needAdjustment = true;
+        GameObject.Find("SyncSound").gameObject.SetActive(needAdjustment);
+
+        _screen.color = Color.black;
+        dimLight = false;
+        brightLight = false;
+        showFileStatus = true;
+
+        //timeText.text = "";
+
+    }
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        Application.runInBackground = true;
+
+        //audioSource.enabled = false;
+        //videoPlayer.audioOutputMode = VideoAudioOutputMode.APIOnly;
+        //videoPlayer.prepareCompleted += Prepared;
+        //videoPlayer.Prepare();
+        //videoPlayer.Prepare();
+        //videoAdjustment.Prepare();
+        //videoAdjustment.enabled = false;
+        //StartCoroutine(playAdjustmentVideo());
+        StartCoroutine(prepareVideo());
+    }
+
+    IEnumerator prepareVideo()
+    {
+        videoPlayer.playOnAwake = false;
+        //videoAdjustment.url = null;
+        if (needAdjustment)
+        {
+            audioSource.playOnAwake = false;
+            videoAdjustment.playOnAwake = false;
+            audioSource.Pause();
+        }
+
+        videoPlayer.source = VideoSource.Url;
+        if (needAdjustment)
+        {
+            videoAdjustment.source = VideoSource.Url;
+            
+        }
+
+        if (needAdjustment)
+        {
+            videoPlayer.audioOutputMode = VideoAudioOutputMode.None;
+            videoAdjustment.audioOutputMode = VideoAudioOutputMode.AudioSource;
+
+            videoAdjustment.controlledAudioTrackCount = 1;
+
+            videoAdjustment.EnableAudioTrack(0, true);
+            videoAdjustment.SetTargetAudioSource(0, audioSource);
+          
+        }
+        if(!needAdjustment)
+        {
+            videoPlayer.audioOutputMode = VideoAudioOutputMode.Direct;
+          
+            videoAdjustment.audioOutputMode = VideoAudioOutputMode.None;
+            
+        }
+        
+        
+
+        videoPlayer.Prepare();
+        if (needAdjustment)
+            videoAdjustment.Prepare();
+
+
+        WaitForSeconds waitTime = new WaitForSeconds(0.5f);
+
+        while (!videoPlayer.isPrepared && !videoAdjustment.isPrepared)
+        {
+            Debug.Log("Preparing Video");
+            yield return waitTime;
+            break;
+        }
+       
+        Debug.Log("Done Preparing Video");
+
+
+
+        while (videoPlayer.isPlaying)
+        {
+            yield return null;
+        }
+
+        }
+
+
+
+    public void Play()
+    {
+        dimLight = true;
+        fileContent.transform.localScale = new Vector3(0f, 0f);
+
+        
+        videoPlayer.Play();
+
+        //if (needAdjustment)
+        //{
+            videoAdjustment.Play();
+        //}
+        //syncsound();
+        videoPlayer.frame = videoAdjustment.frame;
+
+        videoAdjustment.frame = videoPlayer.frame;
+        videoPlayer.frame = videoAdjustment.frame;
+    }
+
+   
+    public void Stop()
+    {
+        videoPlayer.Stop();
+        if (needAdjustment)
+            videoAdjustment.Stop();
+        brightLight = true;
+        _screen.color = Color.black;
+    }
+    public void pauseVideo()
+    {
+        videoPlayer.Pause();
+        if (needAdjustment)
+            videoAdjustment.Pause();
+  
+    }
+    // Update is called once per frame
+    void Update()
+    {
+
+        autoAdjustLight();
+        setTimer();
+        
+        debugText.text = (videoPlayer.time - videoAdjustment.time).ToString();
+
+ 
+
+        float timeDifference = (float)(videoPlayer.time - videoAdjustment.time);
+        float timeDifference2 = (videoPlayer.frame / (long)videoPlayer.frameCount);
+        float movieFramerate = (float)videoPlayer.frameCount / (float)videoPlayer.length;
+
+
+        float movieFrameSecond = (float)Math.Truncate(1/movieFramerate*100)/100;
+
+        
+        /*if (timeDifference > 1 / movieFramerate - movieFrameSecond)
+        //if ((float)(videoPlayer.time - videoAdjustment.time) > 1 /
+        //    ((float)videoPlayer.frameCount / (float)videoPlayer.length)-0.01f)
+        {
+            videoPlayer.playbackSpeed = 0.1f;
+            //videoAdjustment.playbackSpeed = 1.5f;
+            //Debug.Log("1.01");
+            //Debug.Log(videoPlayer.time - videoAdjustment.time);
+
+
+        }
+        else if (timeDifference < 1 / movieFramerate - movieFrameSecond)
+        //else if ((float)(videoPlayer.time - videoAdjustment.time) < 1 /
+        //    ((float)videoPlayer.frameCount / (float)videoPlayer.length)-0.01f)
+        {
+            videoPlayer.playbackSpeed = 1.9f;
+            //videoAdjustment.playbackSpeed = 0.5f;
+
+        }
+        else
+        {
+            videoPlayer.playbackSpeed = 1.0f;
+            //videoAdjustment.playbackSpeed = 1.0f;
+        }*/
+
+
+        //Debug.Log(videoPlayer.time - videoAdjustment.time);
+        //Debug.Log(1/((float)videoPlayer.frameCount / (float)videoPlayer.length));
+        //Debug.Log((long)0.1f);
+        //debugText.text = (1 / ((float)videoPlayer.frameCount / (float)videoPlayer.length)).ToString();
+        //Debug.Log(1/((float)videoPlayer.frameCount / (float)videoPlayer.length));
+        /*float deltaTime = 0.0f;
+        deltaTime += (Time.deltaTime - deltaTime) * 0.1f;
+        float msec = deltaTime * 1000.0f;
+        float fps = 1.0f / deltaTime;*/
+        //debugText.text = string.Format("{0:0.0} ms ({1:0.} fps)", msec, fps);
+    }
+
+    public void fastForward()
+    {
+        if (needAdjustment)
+            videoAdjustment.time += 30f;
+        videoPlayer.time += 30f;
+        
+
+    }
+    public void backward()
+    {
+        if (needAdjustment)
+            videoAdjustment.time -= 30f;
+        videoPlayer.time -= 30f;
+       
+    }
+
+    public void syncsound()
+    {
+        //if (needAdjustment)
+        //{
+        //videoAdjustment.frame = videoPlayer.frame - (long)0.3f + (long)(0.251f * ((float)videoPlayer.frameCount / (float)videoPlayer.length));
+
+        //videoAdjustment.time = videoPlayer.time + 0.48f - 0.0217f;
+        //videoAdjustment.time = videoPlayer.time + 0.4f;
+        //videoAdjustment.frame = videoPlayer.frame + (long)(((float)videoPlayer.frameCount / (float)videoPlayer.length))/4 ;
+        /*1000*(long)(1/ (float)videoPlayer.frameCount / (float)videoPlayer.length)*/
+        //videoAdjustment.time = videoPlayer.time-0.000001f;
+
+        //videoAdjustment.time = videoPlayer.time + 0.5*(videoPlayer.time - videoAdjustment.time) - (1/((float)videoPlayer.frameCount /
+        //(float)videoPlayer.length));
+
+        //videoAdjustment.time = videoPlayer.time + 0.48f - 1/((float)videoPlayer.frameCount / (float)videoPlayer.length);
+
+        //videoAdjustment.time = videoPlayer.time + 10 * (1 / ((float)videoPlayer.frameCount / (float)videoPlayer.length));
+
+        /*videoAdjustment.time = videoPlayer.time;
+     videoAdjustment.frame = videoPlayer.frame;notworking*/
+
+        //videoAdjustment.frame = videoPlayer.frame;
+        //videoAdjustment.frame = videoPlayer.frame;
+        //videoPlayer.playbackSpeed = 1.01f;
+        //videoPlayer.playbackSpeed = 1.0f;
+        //}
+
+
+        videoPlayer.time = videoAdjustment.time;
+        videoPlayer.frame = videoAdjustment.frame;
+
+        //videoAdjustment.GetComponent<RawImage>().texture = GameObject.Find("Main Screen").GetComponent<RawImage>().texture;
+
+        if (coverScreen.enabled)
+        {
+            coverScreen.enabled = false;
+            //coverScreen2.enabled = false;
+        }
+        else
+        {
+            coverScreen.enabled = true;
+            //coverScreen2.enabled = true;
+        }
+
+    }
+
+    private void autoAdjustLight()
+    {
+   
+
+        if (videoPlayer.isPlaying && lightControl.value>=0.15f && dimLight)
+        {
+            lightControl.value -= 0.4f*Time.deltaTime;
+            if(videoPlayer.time >0.01f)
+                _screen.color = Color.white;
+        }
+        if (lightControl.value <= 0.15f)
+            dimLight = false;
+
+        if (videoPlayer.time==0 && lightControl.value <= 1.0f && brightLight)
+        {
+            lightControl.value += 0.4f * Time.deltaTime;
+            _screen.color = Color.black;
+        }
+        if (lightControl.value >= 0.99f)
+            brightLight = false;
+    }
+    
+    /*private void setTimer()
+    {
+        if (videoPlayer.isPlaying)
+        {
+            timeText.color = new Color(255, 255, 255, 1);
+            timeText.text = timeConvert((int)videoPlayer.time)+"  /  "+timeConvert((int)videoPlayer.length);
+
+        }
+        else
+        {
+            timeText.text = "00:00:00  /  00:00:00";
+            timeText.color = new Color(255, 255, 255, 0);
+        }
+        
+    }*/
+
+    private void setTimer()
+    {
+        if (videoPlayer.isPlaying)
+        {
+            runTimer.text = timeConvert((int)videoPlayer.time);
+            finalTimer.text = timeConvert((int)videoPlayer.length);
+        }
+        else
+        {
+            runTimer.text = "00:00:00";
+            finalTimer.text = "00:00:00";
+        }
+    }
+
+    
+    private string timeConvert(int timeToDisplay)
+    {
+        string str_hours,str_minutes,str_seconds;
+        int hours, minutes, seconds;
+
+        seconds = timeToDisplay % 60;
+        minutes = (timeToDisplay / 60) % 60;
+        hours = (timeToDisplay / 60 / 60) % 60;
+
+        if (hours < 10)
+            str_hours = "0" + hours;
+        else str_hours = hours.ToString();
+
+        if (minutes < 10)
+            str_minutes = "0" + minutes;
+        else str_minutes = minutes.ToString();
+
+        if (seconds < 10) 
+            str_seconds = "0" + seconds;
+        else str_seconds = seconds.ToString();
+
+     
+        return str_hours + ":" + str_minutes + ":" + str_seconds;
+        
+
+    }
+
+    public void showFile()
+    {
+        showFileStatus = !showFileStatus;
+
+        if (!showFileStatus)
+        {
+            fileContent.transform.localScale = new Vector3(3.6f, 3.6f);
+        }
+
+        if (showFileStatus)
+        {
+            fileContent.transform.localScale = new Vector3(0f, 0f);
+        }
+    }
+
+}
