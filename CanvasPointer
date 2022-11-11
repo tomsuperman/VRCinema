@@ -1,0 +1,311 @@
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
+
+
+public class CanvasPointer : MonoBehaviour
+{
+    public float defaultlength = 20.0f;
+    public EventSystem eventSystem;
+    public StandaloneInputModule inputModule;
+    public Camera mainCamera;
+
+    [SerializeField]
+    private GameObject Reticle;
+    [SerializeField]
+    private Canvas loadingCircle;
+    [SerializeField]
+    private LoadingCircle mouseClickLoading;
+
+
+    [SerializeField]
+    public float mouseGazeDuration;
+
+
+
+    private bool isReticleShow = false;
+
+    private LineRenderer lineRenderer = null;
+
+    private float startTime;
+    private bool triggercheck = false;
+    private bool buttonClick = false;
+
+    [SerializeField]
+    private List<GameObject> contiueHoldButtons;
+
+    private GameObject raycastObject;
+    private bool _isMoveChange;
+
+    private GameObject clickedObject;
+
+    public void Awake()
+    {
+        lineRenderer = GetComponent<LineRenderer>();
+        _isMoveChange = false;
+
+    }
+
+    private void Update()
+    {
+        updateLength();
+        virtualMouseClick();
+
+        //Debug.Log(raycastObject.name);
+
+    }
+
+
+    private void updateLength()
+    {
+        lineRenderer.SetPosition(0, transform.position);
+        lineRenderer.SetPosition(1, GetEnd());
+
+        showReticle();
+
+        //Debug.Log(raycastObject.name);
+    }
+
+    private Vector3 GetEnd()
+    {
+        float distance = GetCanvasDistance();
+        Vector3 endPosition = calculateEnd(defaultlength);
+
+        if (distance != 0.0f)
+        {
+            endPosition = calculateEnd(distance);
+
+        }
+        return endPosition;
+    }
+
+    private float GetCanvasDistance()
+    {
+        PointerEventData eventData = new PointerEventData(eventSystem);
+
+#if !UNITY_EDITOR
+            eventData.position = inputModule.inputOverride.mousePosition;
+#endif
+        
+
+        List<RaycastResult> results = new List<RaycastResult>();
+        eventSystem.RaycastAll(eventData, results);
+
+
+        RaycastResult closetResult = findRayCast(results);
+
+        //Debug.Log(closetResult);
+        float distance = closetResult.distance;
+
+        distance = Mathf.Clamp(distance, 0.0f, defaultlength);
+
+        return distance;
+    }
+    private Vector3 calculateEnd(float length)
+    {
+        return transform.position + (transform.forward * length);
+    }
+    private RaycastResult findRayCast(List<RaycastResult> results)
+    {
+        foreach (RaycastResult result in results)
+        {
+            if (!result.gameObject)
+            {
+                continue;
+            }
+            raycastObject = result.gameObject;
+            return result;
+        }
+        return new RaycastResult();
+    }
+
+    private void calculateStaytime()
+    {
+      
+        if (GetCanvasDistance() != 0 && !triggercheck)
+        {
+            startTime = Time.fixedTime;
+            triggercheck = true;
+            buttonClick = true;
+        }
+
+        if ((GetCanvasDistance() == 0 && triggercheck))
+        {
+            startTime = 0;
+            triggercheck = false;
+            mouseClickLoading.return_indicatorTimer = 1f;
+        }
+        /*20221027* recursor*/
+        if (raycastObject!=null && raycastObject.name == "Panel" || raycastObject != null && raycastObject.name == "TreeViewViewport")
+        {
+            startTime = 0;
+            triggercheck = false;
+            mouseClickLoading.return_indicatorTimer = 1f;
+        }
+
+        mouseClickLoading.loadingCircleIndicator(triggercheck);
+    }
+
+    private void virtualMouseClick()
+    {
+#if !UNITY_EDITOR
+        PointerEventData eventData = new PointerEventData(eventSystem);
+        calculateStaytime();
+        if (Time.fixedTime - startTime > mouseGazeDuration && startTime != 0 && buttonClick
+            && mouseClickLoading.return_indicatorTimer == 0 )
+        {
+            SendClickEvent(inputModule.inputOverride.mousePosition, true, true);
+
+            /*20221027* recursor*/
+            clickedObject = raycastObject;
+
+            buttonClick = false;
+        }
+
+        if (Time.fixedTime - startTime > mouseGazeDuration + 0.2f && GetCanvasDistance() != 0)
+        {
+            switch (raycastObject.name)
+            {
+                case "Rotate Down":
+                    contiueHoldButtons.Find(go => go.name == "Rotate Down").GetComponent<continuePressed>().OnPointerDown(eventData);
+                    contiueHoldButtons.Find(go => go.name == "Rotate Down").GetComponent<Image>().color = new Color(0, 133, 0);
+                    _isMoveChange = true;
+                    break;
+                case "Rotate Up":
+                    //SendClickEvent(inputModule.inputOverride.mousePosition, true, false);
+                    contiueHoldButtons.Find(go => go.name == "Rotate Up").GetComponent<continuePressed>().OnPointerDown(eventData);
+                    contiueHoldButtons.Find(go => go.name == "Rotate Up").GetComponent<Image>().color = new Color(0, 133, 0);
+                    _isMoveChange = true;
+                    break;
+                case "Move Back":
+                    //SendClickEvent(inputModule.inputOverride.mousePosition, true, false);
+                    contiueHoldButtons.Find(go => go.name == "Move Back").GetComponent<continuePressed>().OnPointerDown(eventData);
+                    contiueHoldButtons.Find(go => go.name == "Move Back").GetComponent<Image>().color = new Color(0, 133, 0);
+                    _isMoveChange = true;
+                    break;
+                case "Move Front":
+                    //SendClickEvent(inputModule.inputOverride.mousePosition, true, false);
+                    contiueHoldButtons.Find(go => go.name == "Move Front").GetComponent<continuePressed>().OnPointerDown(eventData);
+                    contiueHoldButtons.Find(go => go.name == "Move Front").GetComponent<Image>().color = new Color(0, 133, 0);
+                    _isMoveChange = true;
+                    break;
+                case "Move Up":
+                    //SendClickEvent(inputModule.inputOverride.mousePosition, true, false);
+                    contiueHoldButtons.Find(go => go.name == "Move Up").GetComponent<continuePressed>().OnPointerDown(eventData);
+                    contiueHoldButtons.Find(go => go.name == "Move Up").GetComponent<Image>().color = new Color(0, 133, 0);
+                    _isMoveChange = true;
+                    break;
+                case "Move Down":
+                    //SendClickEvent(inputModule.inputOverride.mousePosition, true, false);
+                    contiueHoldButtons.Find(go => go.name == "Move Down").GetComponent<continuePressed>().OnPointerDown(eventData);
+                    contiueHoldButtons.Find(go => go.name == "Move Down").GetComponent<Image>().color = new Color(0, 133, 0);
+                    _isMoveChange = true;
+                    break;
+            }
+        }
+        if (!contiueHoldButtons.Contains(raycastObject) && _isMoveChange ||
+            startTime==0 && _isMoveChange)
+        {
+            foreach (GameObject i in contiueHoldButtons)
+            {
+                //SendClickEvent(i.transform.position, false, true);
+                i.GetComponent<continuePressed>().OnPointerUp(eventData);
+                i.GetComponent<Image>().color = new Color(255, 255, 255);
+            }
+            _isMoveChange = false;
+        }
+        else if (contiueHoldButtons.Contains(raycastObject) && _isMoveChange)
+        {
+
+            foreach (GameObject i in contiueHoldButtons)
+            {
+                if (i != raycastObject)
+                {
+                    i.GetComponent<continuePressed>().OnPointerUp(eventData);
+                    i.GetComponent<Image>().color = new Color(255, 255, 255);
+                }
+            }
+        }
+
+ 
+        /*20221027* recursor*/
+        if (raycastObject!=null && (raycastObject.name != "Panel" || raycastObject.name != "TreeViewViewport")
+            && raycastObject.name != "Expanded" && raycastObject != clickedObject && !buttonClick)
+        {
+            
+            triggercheck = true;
+            buttonClick = true;
+
+
+            mouseClickLoading.return_indicatorTimer = 1f;
+
+        }
+        
+
+        #endif
+    }
+
+    private void SendClickEvent(Vector2 pos, bool pressed, bool released)
+    {
+  
+        var methodGetTouch = inputModule.GetType().
+            GetMethod("GetTouchPointerEventData", BindingFlags.Instance | BindingFlags.NonPublic);
+
+        var touch = new Touch()
+        {
+            position = pos
+        };
+
+        var pointerData = methodGetTouch.Invoke(inputModule, new object[] {touch, true, true });
+
+        var methodProcess = inputModule.GetType().GetMethod("ProcessTouchPress",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+
+        methodProcess.Invoke(inputModule, new object[] { pointerData, pressed, released });
+
+    }
+
+    private void showReticle()
+    {
+        if(!isReticleShow)
+        {
+            Instantiate(Reticle, this.transform.position, this.transform.rotation);
+            isReticleShow = true;
+        }
+        GameObject reticleClone = GameObject.Find("Reticle(Clone)");
+        reticleClone.transform.position = GetEnd();
+        if(GetCanvasDistance()==0)
+        {
+            reticleClone.GetComponentInChildren<SpriteRenderer>().enabled = false;
+            
+            loadingCircle.enabled = false;
+            mouseClickLoading.return_indicatorTimer = 1f;
+     
+        }
+        else if(GetCanvasDistance()!=0 && raycastObject.name == "Panel")
+        {
+            reticleClone.GetComponentInChildren<SpriteRenderer>().enabled = true;
+            loadingCircle.enabled = false;
+        }
+        else
+        {
+            reticleClone.GetComponentInChildren<SpriteRenderer>().enabled = true;
+            loadingCircle.enabled = true;
+            loadingCircle.transform.position = reticleClone.transform.position;   
+        }
+       
+        reticleClone.transform.LookAt(reticleClone.transform.position + mainCamera.transform.rotation * Vector3.forward,
+            mainCamera.transform.rotation * Vector3.up);
+
+
+        loadingCircle.transform.LookAt(loadingCircle.transform.position + mainCamera.transform.rotation * Vector3.forward,
+            mainCamera.transform.rotation * Vector3.up);
+
+    }
+
+    
+}
