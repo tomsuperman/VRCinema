@@ -194,3 +194,40 @@ public class dataItemLocal : MonoBehaviour
 
 }
 
+try
+{
+    string textFieldText = "";
+
+    // Traverse the parent hierarchy and construct the textField.text
+    DataItem currentItem = dataItem;
+    while (currentItem != null)
+    {
+        textFieldText = currentItem.Name + textFieldText;
+        currentItem = currentItem.Parent;
+    }
+
+    // Set the textField.text
+    textField.text = textFieldText;
+
+    // Construct the full path and open the media
+    string fullPath = getAliyunFile.aliyunFilePath + textFieldText;
+
+    // Check if it is open through a direct link and replace the link with directURL if needed
+    if (dataPass.directLink)
+    {
+        fullPath = getAliyunFile.directURL;
+    }
+
+    bool isOpening = mediaPlayer.OpenMedia(new MediaPath(fullPath, MediaPathType.AbsolutePathOrURL), autoPlay: false);
+
+    // 221113 Preview
+    previewPlayer.SetActive(true);
+    bool isPreview = previewPlayer.GetComponentInChildren<MediaPlayer>().OpenMedia(new MediaPath(fullPath, MediaPathType.AbsolutePathOrURL), autoPlay: true);
+}
+catch
+{
+    // Handle exceptions
+    return;
+}
+
+
