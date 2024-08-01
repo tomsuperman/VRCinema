@@ -1,0 +1,74 @@
+8k video ignore preview
+
+
+
+
+    private void OnVideoEvent(MediaPlayer mp, MediaPlayerEvent.EventType et, ErrorCode errorCode)
+    {
+        if (et == MediaPlayerEvent.EventType.FirstFrameReady)
+        {
+            previewPlayer.GetComponentInChildren<RawImage>().color = Color.white;
+            isFirstFrameReady = true;
+            if(mp.Info.GetVideoWidth() >5000)
+            {
+                canOpenPreview = false;
+            }
+            else if(mp.Info.GetVideoWidth() <5000)
+            {
+                canOpenPreview = true;
+            }
+            else
+                canOpenPreview = false;
+        }
+        else
+        {
+            isFirstFrameReady = false;
+            canOpenPreview = false;
+        }
+    }
+
+    private void showPreview()
+    {
+       mediaPlayer.Events.AddListener(OnVideoEvent);
+
+       if(isFirstFrameReady && canOpenPreview && !isPreviewOpened)
+       {
+            previewPlayer.SetActive(true);
+            //previewPlayer.GetComponentInChildren<RawImage>().color = Color.white;
+            bool isPreview = previewPlayer.GetComponentInChildren<MediaPlayer>().OpenMedia(new MediaPath(mediaFileURL,
+                   MediaPathType.AbsolutePathOrURL), autoPlay: true);
+            isPreviewOpened = true;
+
+            Debug.Log("Preview can open and resolution is lower than 4k");
+       }
+       else if(isFirstFrameReady && !canOpenPreview && !isPreviewOpened)
+       {
+            previewPlayer.GetComponentInChildren<RawImage>().color = Color.black;
+            previewPlayer.GetComponentInChildren<MediaPlayer>().CloseMedia();
+            previewPlayer.SetActive(false);
+            isPreviewOpened = false;
+            Debug.Log("Preview can not open and resolution is higher than 4k");
+       }
+       else if(isFirstFrameReady && !canOpenPreview && isPreviewOpened)
+       {
+            previewPlayer.GetComponentInChildren<RawImage>().color = Color.black;
+            previewPlayer.GetComponentInChildren<MediaPlayer>().CloseMedia();
+            previewPlayer.SetActive(false);
+            isPreviewOpened = false;
+            Debug.Log("Preview can not open and resolution is higher than 4k");
+       }
+       else if(!isFirstFrameReady && !canOpenPreview)
+       {
+            previewPlayer.GetComponentInChildren<RawImage>().color = Color.black;
+            previewPlayer.GetComponentInChildren<MediaPlayer>().CloseMedia();
+            previewPlayer.SetActive(false);
+            isPreviewOpened = false;
+            Debug.Log("First Frame is not ready");
+       }
+       else
+       {
+            //Debug.Log("Video Width is: "+mediaPlayer.Info.GetVideoWidth());
+            Debug.Log("First Frame Ready status is: "+isFirstFrameReady+" !!! isPreviewOpened status is: "+isPreviewOpened);
+       }    
+            
+    }
